@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/resume_model.dart';
+import '../utils/responsive_utils.dart';
 
 class ResumeViewerScreen extends StatefulWidget {
   final String resumeId;
@@ -147,33 +148,156 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _resume == null
               ? const Center(child: Text('이력서를 찾을 수 없습니다'))
-              : SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              : ResponsiveLayout(
+                  mobile: _buildMobileResumeView(context),
+                  desktop: _buildDesktopResumeView(context),
+                ),
+    );
+  }
+
+  // 모바일용 이력서 상세 뷰
+  Widget _buildMobileResumeView(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 이력서 제목
+            Text(
+              _resume!.title,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            // 마지막 수정 날짜
+            Text(
+              '마지막 수정: ${_formatDate(_resume!.updatedAt)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const Divider(height: 32),
+            // 이력서 내용
+            Text(
+              _resume!.content,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 데스크톱용 이력서 상세 뷰
+  Widget _buildDesktopResumeView(BuildContext context) {
+    return Center(
+      child: SizedBox(
+        width: ResponsiveUtils.getContentMaxWidth(context),
+        child: Padding(
+          padding: ResponsiveUtils.getScreenPadding(context),
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 상단 헤더 (제목 + 공유 버튼)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // 이력서 제목
-                        Text(
-                          _resume!.title,
-                          style: Theme.of(context).textTheme.titleLarge,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _resume!.title,
+                                style:
+                                    Theme.of(context).textTheme.headlineMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '마지막 수정: ${_formatDate(_resume!.updatedAt)}',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        // 마지막 수정 날짜
-                        Text(
-                          '마지막 수정: ${_formatDate(_resume!.updatedAt)}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const Divider(height: 32),
-                        // 이력서 내용
-                        Text(
-                          _resume!.content,
-                          style: Theme.of(context).textTheme.bodyLarge,
+                        // 데스크톱용 액션 버튼들
+                        Row(
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: _toggleShare,
+                              icon: Icon(_isShared
+                                  ? Icons.share
+                                  : Icons.share_outlined),
+                              label: Text(_isShared ? '공유 해제' : '공유하기'),
+                            ),
+                            const SizedBox(width: 12),
+                            ElevatedButton.icon(
+                              onPressed: () => context.push('/editor',
+                                  extra: {'resumeId': _resume!.id}),
+                              icon: const Icon(Icons.edit_outlined),
+                              label: const Text('수정하기'),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ),
+                    const Divider(height: 40, thickness: 1),
+                    // 이력서 내용 (데스크톱용 포맷)
+                    Text(
+                      _resume!.content,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        height: 1.8,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // 하단 액션 버튼들
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            // TODO: PDF 다운로드 기능 구현
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('PDF 다운로드 기능은 곧 구현될 예정입니다.')),
+                            );
+                          },
+                          icon: const Icon(Icons.download),
+                          label: const Text('PDF 다운로드'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        OutlinedButton.icon(
+                          onPressed: () => context.go('/'),
+                          icon: const Icon(Icons.home),
+                          label: const Text('홈으로'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -191,30 +315,148 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: 5, // 임시 데이터 수
-              itemBuilder: (context, index) {
-                // 임시 데이터
-                final resume = Resume.create(
-                  title: '이력서 ${index + 1}',
-                  content: '내용 ${index + 1}',
-                );
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    title: Text(resume.title),
-                    subtitle: Text(
-                      '마지막 수정: ${_formatDate(resume.updatedAt)}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () => context.push('/viewer/${resume.id}'),
-                  ),
-                );
-              },
+          : ResponsiveLayout(
+              mobile: _buildMobileResumeList(),
+              desktop: _buildDesktopResumeList(),
             ),
+    );
+  }
+
+  // 모바일용 이력서 목록
+  Widget _buildMobileResumeList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 5, // 임시 데이터 수
+      itemBuilder: (context, index) {
+        // 임시 데이터
+        final resume = Resume.create(
+          title: '이력서 ${index + 1}',
+          content: '내용 ${index + 1}',
+        );
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: ListTile(
+            title: Text(resume.title),
+            subtitle: Text(
+              '마지막 수정: ${_formatDate(resume.updatedAt)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => context.push('/viewer/${resume.id}'),
+          ),
+        );
+      },
+    );
+  }
+
+  // 데스크톱용 이력서 목록
+  Widget _buildDesktopResumeList() {
+    return Center(
+      child: SizedBox(
+        width: ResponsiveUtils.getContentMaxWidth(context),
+        child: Padding(
+          padding: ResponsiveUtils.getScreenPadding(context),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 상단 타이틀
+              const Text(
+                '내 이력서 목록',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // 새 이력서 생성 버튼
+              ElevatedButton.icon(
+                onPressed: () => context.push('/editor'),
+                icon: const Icon(Icons.add),
+                label: const Text('새 이력서 작성하기'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              // 그리드 형태의 이력서 목록
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    childAspectRatio: 1.2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: 8, // 임시 데이터 수
+                  itemBuilder: (context, index) {
+                    // 임시 데이터
+                    final resume = Resume.create(
+                      title: '이력서 ${index + 1}',
+                      content: '이력서 내용 ${index + 1}. 여기에는 더 많은 내용이 들어갈 수 있습니다.',
+                    );
+
+                    return Card(
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: InkWell(
+                        onTap: () => context.push('/viewer/${resume.id}'),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                resume.title,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '마지막 수정: ${_formatDate(resume.updatedAt)}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 12),
+                              Expanded(
+                                child: Text(
+                                  resume.content,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  OutlinedButton(
+                                    onPressed: () =>
+                                        context.push('/viewer/${resume.id}'),
+                                    child: const Text('보기'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

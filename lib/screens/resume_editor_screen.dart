@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/resume_model.dart';
+import '../utils/responsive_utils.dart';
 
 class ResumeEditorScreen extends StatefulWidget {
   final String? resumeId;
@@ -150,50 +151,144 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+          : ResponsiveLayout(
+              mobile: _buildMobileLayout(context),
+              desktop: _buildDesktopLayout(context),
+            ),
+    );
+  }
+
+  // 모바일 레이아웃
+  Widget _buildMobileLayout(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: _buildForm(context),
+      ),
+    );
+  }
+
+  // 데스크톱 레이아웃
+  Widget _buildDesktopLayout(BuildContext context) {
+    return Center(
+      child: SizedBox(
+        width: ResponsiveUtils.getContentMaxWidth(context),
+        child: Padding(
+          padding: ResponsiveUtils.getScreenPadding(context),
+          child: SingleChildScrollView(
+            child: Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // 제목 입력 필드
-                      TextFormField(
-                        controller: _titleController,
-                        decoration: const InputDecoration(
-                          labelText: '제목',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return '제목을 입력해주세요';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      // 내용 입력 필드
-                      TextFormField(
-                        controller: _contentController,
-                        decoration: const InputDecoration(
-                          labelText: '내용',
-                          border: OutlineInputBorder(),
-                          alignLabelWithHint: true,
-                        ),
-                        maxLines: 20,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return '내용을 입력해주세요';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+                padding: const EdgeInsets.all(32.0),
+                child: _buildForm(context, isDesktop: true),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 폼 빌더
+  Widget _buildForm(BuildContext context, {bool isDesktop = false}) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (isDesktop) ...[
+            Text(
+              _isEditing ? '이력서 수정하기' : '새 이력서 작성하기',
+              style: Theme.of(context).textTheme.headlineMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+          ],
+          // 제목 입력 필드
+          TextFormField(
+            controller: _titleController,
+            decoration: InputDecoration(
+              labelText: '제목',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
+              ),
+              contentPadding: EdgeInsets.all(isDesktop ? 20.0 : 16.0),
+            ),
+            style: isDesktop
+                ? const TextStyle(fontSize: 18)
+                : const TextStyle(fontSize: 16),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return '제목을 입력해주세요';
+              }
+              return null;
+            },
+          ),
+          SizedBox(height: isDesktop ? 24.0 : 16.0),
+          // 내용 입력 필드
+          TextFormField(
+            controller: _contentController,
+            decoration: InputDecoration(
+              labelText: '내용',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
+              ),
+              alignLabelWithHint: true,
+              contentPadding: EdgeInsets.all(isDesktop ? 20.0 : 16.0),
+            ),
+            maxLines: isDesktop ? 25 : 20,
+            style: isDesktop
+                ? const TextStyle(fontSize: 16)
+                : const TextStyle(fontSize: 14),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return '내용을 입력해주세요';
+              }
+              return null;
+            },
+          ),
+          SizedBox(height: isDesktop ? 32.0 : 24.0),
+          if (isDesktop)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _saveResume,
+                  icon: const Icon(Icons.save),
+                  label: const Text('저장하기'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    textStyle: const TextStyle(fontSize: 16),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                OutlinedButton.icon(
+                  onPressed: () => context.pop(),
+                  icon: const Icon(Icons.cancel),
+                  label: const Text('취소'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    textStyle: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ],
+            )
+          else
+            ElevatedButton(
+              onPressed: _isLoading ? null : _saveResume,
+              child: const Text('저장하기'),
+            ),
+        ],
+      ),
     );
   }
 }
