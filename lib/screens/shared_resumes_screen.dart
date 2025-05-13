@@ -22,7 +22,7 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
   bool _isSearchExpanded = false; // 데스크톱에서 검색창 확장 여부
 
   // 정렬 옵션 목록
-  final List<String> _sortOptions = ['최신순', '오래된순', '제목순', '작성자순'];
+  final List<String> _sortOptions = ['최신순', '오래된순', '제목순', '작성자순', '따봉순'];
 
   // 카테고리 목록
   final List<String> _categories = [
@@ -70,9 +70,9 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
           resume.ownerName.toLowerCase().contains(searchQuery) ||
           resume.content.toLowerCase().contains(searchQuery);
 
-      // 카테고리 필터링 (카테고리 정보가 실제 이력서 모델에 추가되어야 함)
-      final matchesCategory = _selectedCategory == '전체' ||
-          resume.title.contains(_selectedCategory); // 임시로 제목에 카테고리가 포함되어 있는지 확인
+      // 카테고리 필터링
+      final matchesCategory =
+          _selectedCategory == '전체' || resume.category == _selectedCategory;
 
       return matchesQuery && matchesCategory;
     }).toList();
@@ -90,6 +90,9 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
         break;
       case '작성자순':
         filtered.sort((a, b) => a.ownerName.compareTo(b.ownerName));
+        break;
+      case '따봉순':
+        filtered.sort((a, b) => b.likeCount.compareTo(a.likeCount));
         break;
     }
 
@@ -120,6 +123,12 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
           isShared: true,
           ownerName: '사용자 ${index + 1}',
           sharingUrl: 'https://resume-share.example.com/shared-$index',
+          category: _getRandomCategory(),
+          likeCount: index % 5 + 1, // 임시 좋아요 수
+          isPremium: index % 3 == 0, // 일부 이력서만 프리미엄으로 설정
+          reviewPrice: (index % 3 == 0)
+              ? (index + 1) * 5000.0
+              : 0.0, // 프리미엄 이력서에만 검토 가격 설정
         ),
       );
 
@@ -549,7 +558,7 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
                     ),
                   ),
                   // 카테고리 칩 추가
-                  _getCategoryChip(resume.title),
+                  _getCategoryChip(resume.category),
                 ],
               ),
               const SizedBox(height: 8),
@@ -563,8 +572,30 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
               ),
               const SizedBox(height: 12),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // 따봉 표시
+                  Row(
+                    children: [
+                      const Icon(Icons.thumb_up, size: 16),
+                      const SizedBox(width: 4),
+                      Text('${resume.likeCount}'),
+                    ],
+                  ),
+                  // 프리미엄/검토 가격 표시
+                  if (resume.isPremium)
+                    Chip(
+                      label: Text(
+                        '검토: ${resume.reviewPrice.toStringAsFixed(0)}원',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .secondary
+                          .withOpacity(0.2),
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                    ),
                   TextButton.icon(
                     icon: const Icon(Icons.visibility, size: 18),
                     label: const Text('보기'),
@@ -625,23 +656,66 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          '공유일: ${_formatDate(resume.updatedAt)}',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                        Row(
+                          children: [
+                            Text(
+                              _formatDate(resume.updatedAt),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            const SizedBox(width: 16),
+                            // 따봉 수 표시
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.thumb_up,
+                                  size: 14,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${resume.likeCount}',
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                  // 카테고리 칩
-                  _getCategoryChip(resume.title),
+                  const Spacer(),
+                  // 프리미엄 배지
+                  if (resume.isPremium)
+                    Chip(
+                      label: Text(
+                        '검토: ${resume.reviewPrice.toStringAsFixed(0)}원',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                    ),
                 ],
               ),
-              const Divider(height: 32),
+              const Divider(height: 24),
+              // 카테고리 및 제목
+              Row(
+                children: [
+                  _getCategoryChip(resume.category),
+                  const SizedBox(width: 12),
+                ],
+              ),
+              const SizedBox(height: 8),
               // 이력서 제목
               Text(
                 resume.title,
                 style: const TextStyle(
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
                 maxLines: 2,
@@ -687,29 +761,28 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
   }
 
   // 카테고리 칩 생성
-  Widget _getCategoryChip(String title) {
-    String category = '기타';
+  Widget _getCategoryChip(String category) {
     Color chipColor = Colors.grey;
 
-    // 제목에서 카테고리 추출 (실제로는 이력서 모델에 카테고리 필드가 있어야 함)
-    if (title.contains('개발')) {
-      category = '개발';
-      chipColor = Colors.blue;
-    } else if (title.contains('디자인')) {
-      category = '디자인';
-      chipColor = Colors.purple;
-    } else if (title.contains('마케팅')) {
-      category = '마케팅';
-      chipColor = Colors.orange;
-    } else if (title.contains('기획')) {
-      category = '기획';
-      chipColor = Colors.green;
-    } else if (title.contains('영업')) {
-      category = '영업';
-      chipColor = Colors.red;
-    } else if (title.contains('인사')) {
-      category = '인사';
-      chipColor = Colors.teal;
+    switch (category) {
+      case '개발':
+        chipColor = Colors.blue;
+        break;
+      case '디자인':
+        chipColor = Colors.purple;
+        break;
+      case '마케팅':
+        chipColor = Colors.orange;
+        break;
+      case '기획':
+        chipColor = Colors.green;
+        break;
+      case '영업':
+        chipColor = Colors.red;
+        break;
+      case '인사':
+        chipColor = Colors.teal;
+        break;
     }
 
     return Chip(

@@ -5,6 +5,7 @@ import 'screens/resume_editor_screen.dart';
 import 'screens/resume_viewer_screen.dart';
 import 'screens/shared_resumes_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/review_requests_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,6 +36,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/shared',
       builder: (context, state) => const SharedResumesScreen(),
+    ),
+    GoRoute(
+      path: '/reviews',
+      builder: (context, state) => const ReviewRequestsScreen(),
     ),
   ],
 );

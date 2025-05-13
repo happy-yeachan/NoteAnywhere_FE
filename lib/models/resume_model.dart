@@ -10,6 +10,13 @@ class Resume extends Equatable {
   final String ownerName;
   final String sharingUrl;
 
+  // 추가 필드
+  final int likeCount; // 따봉(좋아요) 수
+  final List<String> likedUserIds; // 따봉한 사용자 ID 목록
+  final String category; // 이력서 카테고리
+  final bool isPremium; // 프리미엄 이력서 여부
+  final double reviewPrice; // 검토 요청 기본 가격
+
   const Resume({
     required this.id,
     required this.title,
@@ -19,6 +26,11 @@ class Resume extends Equatable {
     this.isShared = false,
     this.ownerName = '',
     this.sharingUrl = '',
+    this.likeCount = 0,
+    this.likedUserIds = const [],
+    this.category = '기타',
+    this.isPremium = false,
+    this.reviewPrice = 0.0,
   });
 
   Resume copyWith({
@@ -30,6 +42,11 @@ class Resume extends Equatable {
     bool? isShared,
     String? ownerName,
     String? sharingUrl,
+    int? likeCount,
+    List<String>? likedUserIds,
+    String? category,
+    bool? isPremium,
+    double? reviewPrice,
   }) {
     return Resume(
       id: id ?? this.id,
@@ -40,6 +57,11 @@ class Resume extends Equatable {
       isShared: isShared ?? this.isShared,
       ownerName: ownerName ?? this.ownerName,
       sharingUrl: sharingUrl ?? this.sharingUrl,
+      likeCount: likeCount ?? this.likeCount,
+      likedUserIds: likedUserIds ?? this.likedUserIds,
+      category: category ?? this.category,
+      isPremium: isPremium ?? this.isPremium,
+      reviewPrice: reviewPrice ?? this.reviewPrice,
     );
   }
 
@@ -53,6 +75,11 @@ class Resume extends Equatable {
       'isShared': isShared,
       'ownerName': ownerName,
       'sharingUrl': sharingUrl,
+      'likeCount': likeCount,
+      'likedUserIds': likedUserIds,
+      'category': category,
+      'isPremium': isPremium,
+      'reviewPrice': reviewPrice,
     };
   }
 
@@ -66,6 +93,13 @@ class Resume extends Equatable {
       isShared: json['isShared'] ?? false,
       ownerName: json['ownerName'] ?? '',
       sharingUrl: json['sharingUrl'] ?? '',
+      likeCount: json['likeCount'] ?? 0,
+      likedUserIds:
+          (json['likedUserIds'] as List?)?.map((e) => e as String).toList() ??
+              [],
+      category: json['category'] ?? '기타',
+      isPremium: json['isPremium'] ?? false,
+      reviewPrice: (json['reviewPrice'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -78,13 +112,20 @@ class Resume extends Equatable {
         updatedAt,
         isShared,
         ownerName,
-        sharingUrl
+        sharingUrl,
+        likeCount,
+        likedUserIds,
+        category,
+        isPremium,
+        reviewPrice,
       ];
 
   // 새로운 이력서 생성을 위한 팩토리 메서드
   factory Resume.create({
     required String title,
     String content = '',
+    String category = '기타',
+    double reviewPrice = 0.0,
   }) {
     final now = DateTime.now();
     return Resume(
@@ -93,6 +134,37 @@ class Resume extends Equatable {
       content: content,
       createdAt: now,
       updatedAt: now,
+      category: category,
+      reviewPrice: reviewPrice,
     );
   }
+
+  // 따봉 추가 메서드
+  Resume addLike(String userId) {
+    if (likedUserIds.contains(userId)) {
+      return this;
+    }
+
+    final newLikedUserIds = List<String>.from(likedUserIds)..add(userId);
+    return copyWith(
+      likeCount: likeCount + 1,
+      likedUserIds: newLikedUserIds,
+    );
+  }
+
+  // 따봉 취소 메서드
+  Resume removeLike(String userId) {
+    if (!likedUserIds.contains(userId)) {
+      return this;
+    }
+
+    final newLikedUserIds = List<String>.from(likedUserIds)..remove(userId);
+    return copyWith(
+      likeCount: likeCount - 1,
+      likedUserIds: newLikedUserIds,
+    );
+  }
+
+  // 이력서가 유료인지 확인
+  bool get isReviewPriced => reviewPrice > 0;
 }
