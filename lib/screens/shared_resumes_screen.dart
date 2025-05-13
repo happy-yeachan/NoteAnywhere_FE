@@ -19,6 +19,7 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
   final _searchController = TextEditingController();
   String _selectedSortOption = '최신순';
   String _selectedCategory = '전체';
+  bool _isSearchExpanded = false; // 데스크톱에서 검색창 확장 여부
 
   // 정렬 옵션 목록
   final List<String> _sortOptions = ['최신순', '오래된순', '제목순', '작성자순'];
@@ -169,99 +170,107 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
   Widget _buildMobileSharedList(BuildContext context) {
     return Column(
       children: [
-        // 모바일용 검색 필터 영역
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+        // 모바일용 검색 필터 영역을 확장 패널로 변경
+        ExpansionTile(
+          title: Row(
             children: [
-              // 검색창
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: '이력서 제목, 작성자 검색',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
+              const Icon(Icons.search),
+              const SizedBox(width: 8),
+              const Text('검색 필터'),
+              const Spacer(),
+              Text(
+                '${_filteredResumes.length}개의 이력서',
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-              const SizedBox(height: 12),
-              // 필터 옵션 (드롭다운)
-              Row(
+            ],
+          ),
+          initiallyExpanded: false, // 기본적으로 접힌 상태로 시작
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
                 children: [
-                  // 카테고리 선택
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: '카테고리',
-                        isDense: true,
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  // 검색창
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: '이력서 제목, 작성자 검색',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
                       ),
-                      value: _selectedCategory,
-                      items: _categories.map((category) {
-                        return DropdownMenuItem<String>(
-                          value: category,
-                          child: Text(category),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCategory = value!;
-                          _filterResumes();
-                        });
-                      },
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  // 정렬 방식 선택
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: '정렬',
-                        isDense: true,
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  const SizedBox(height: 12),
+                  // 필터 옵션 (드롭다운)
+                  Row(
+                    children: [
+                      // 카테고리 선택
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: '카테고리',
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                          ),
+                          value: _selectedCategory,
+                          items: _categories.map((category) {
+                            return DropdownMenuItem<String>(
+                              value: category,
+                              child: Text(category),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedCategory = value!;
+                              _filterResumes();
+                            });
+                          },
+                        ),
                       ),
-                      value: _selectedSortOption,
-                      items: _sortOptions.map((option) {
-                        return DropdownMenuItem<String>(
-                          value: option,
-                          child: Text(option),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedSortOption = value!;
-                          _filterResumes();
-                        });
-                      },
+                      const SizedBox(width: 12),
+                      // 정렬 방식 선택
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: '정렬',
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                          ),
+                          value: _selectedSortOption,
+                          items: _sortOptions.map((option) {
+                            return DropdownMenuItem<String>(
+                              value: option,
+                              child: Text(option),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedSortOption = value!;
+                              _filterResumes();
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // 새로고침 버튼
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _loadSharedResumes,
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('새로고침'),
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-
-        // 결과 카운트 표시
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${_filteredResumes.length}개의 이력서',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              TextButton.icon(
-                onPressed: _loadSharedResumes,
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('새로고침'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
 
         // 이력서 목록
@@ -294,7 +303,7 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 상단 타이틀 및 검색/필터 영역
+              // 상단 타이틀 및 정보 표시줄
               Row(
                 children: [
                   // 타이틀
@@ -307,6 +316,28 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
                       ),
                     ),
                   ),
+                  // 검색 필터 토글 버튼
+                  IconButton(
+                    icon: Icon(
+                      _isSearchExpanded
+                          ? Icons.filter_list_off
+                          : Icons.filter_list,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    tooltip: _isSearchExpanded ? '검색 필터 닫기' : '검색 필터 열기',
+                    onPressed: () {
+                      setState(() {
+                        _isSearchExpanded = !_isSearchExpanded;
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  // 결과 개수 표시
+                  Text(
+                    '${_filteredResumes.length}개 결과',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(width: 16),
                   // 새로고침 버튼
                   ElevatedButton.icon(
                     onPressed: _loadSharedResumes,
@@ -314,8 +345,8 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
                     label: const Text('새로고침'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
+                        horizontal: 16,
+                        vertical: 12,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -324,122 +355,116 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
 
-              // 검색 및 필터 영역
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '검색 필터',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+              // 검색 필터 영역 (토글 가능)
+              if (_isSearchExpanded) ...[
+                const SizedBox(height: 16),
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '검색 필터',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      // 검색창 및 필터
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 검색창
-                          Expanded(
-                            flex: 3,
-                            child: TextField(
-                              controller: _searchController,
-                              decoration: InputDecoration(
-                                hintText: '이력서 제목, 작성자, 내용 검색',
-                                prefixIcon: const Icon(Icons.search),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                        const SizedBox(height: 16),
+                        // 검색창 및 필터
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 검색창
+                            Expanded(
+                              flex: 3,
+                              child: TextField(
+                                controller: _searchController,
+                                decoration: InputDecoration(
+                                  hintText: '이력서 제목, 작성자, 내용 검색',
+                                  prefixIcon: const Icon(Icons.search),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  contentPadding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                 ),
-                                contentPadding:
-                                    const EdgeInsets.symmetric(vertical: 16),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          // 카테고리 선택
-                          Expanded(
-                            flex: 2,
-                            child: DropdownButtonFormField<String>(
-                              decoration: InputDecoration(
-                                labelText: '카테고리',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                            const SizedBox(width: 16),
+                            // 카테고리 선택
+                            Expanded(
+                              flex: 2,
+                              child: DropdownButtonFormField<String>(
+                                decoration: InputDecoration(
+                                  labelText: '카테고리',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 16),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 16),
+                                value: _selectedCategory,
+                                isExpanded: true,
+                                items: _categories.map((category) {
+                                  return DropdownMenuItem<String>(
+                                    value: category,
+                                    child: Text(category),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedCategory = value!;
+                                    _filterResumes();
+                                  });
+                                },
                               ),
-                              value: _selectedCategory,
-                              isExpanded: true,
-                              items: _categories.map((category) {
-                                return DropdownMenuItem<String>(
-                                  value: category,
-                                  child: Text(category),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedCategory = value!;
-                                  _filterResumes();
-                                });
-                              },
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          // 정렬 선택
-                          Expanded(
-                            flex: 2,
-                            child: DropdownButtonFormField<String>(
-                              decoration: InputDecoration(
-                                labelText: '정렬 방식',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                            const SizedBox(width: 16),
+                            // 정렬 선택
+                            Expanded(
+                              flex: 2,
+                              child: DropdownButtonFormField<String>(
+                                decoration: InputDecoration(
+                                  labelText: '정렬 방식',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 16),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 16),
+                                value: _selectedSortOption,
+                                isExpanded: true,
+                                items: _sortOptions.map((option) {
+                                  return DropdownMenuItem<String>(
+                                    value: option,
+                                    child: Text(option),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedSortOption = value!;
+                                    _filterResumes();
+                                  });
+                                },
                               ),
-                              value: _selectedSortOption,
-                              isExpanded: true,
-                              items: _sortOptions.map((option) {
-                                return DropdownMenuItem<String>(
-                                  value: option,
-                                  child: Text(option),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedSortOption = value!;
-                                  _filterResumes();
-                                });
-                              },
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
+              ],
 
-              // 결과 카운트 표시
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-                child: Text(
-                  '${_filteredResumes.length}개의 이력서가 검색되었습니다',
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ),
+              const SizedBox(height: 24),
 
               // 그리드 레이아웃의 공유 이력서 목록
               Expanded(
