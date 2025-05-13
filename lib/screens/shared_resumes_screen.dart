@@ -13,11 +13,88 @@ class SharedResumesScreen extends StatefulWidget {
 class _SharedResumesScreenState extends State<SharedResumesScreen> {
   bool _isLoading = true;
   List<Resume> _sharedResumes = [];
+  List<Resume> _filteredResumes = [];
+
+  // 검색 필터 관련 상태
+  final _searchController = TextEditingController();
+  String _selectedSortOption = '최신순';
+  String _selectedCategory = '전체';
+
+  // 정렬 옵션 목록
+  final List<String> _sortOptions = ['최신순', '오래된순', '제목순', '작성자순'];
+
+  // 카테고리 목록
+  final List<String> _categories = [
+    '전체',
+    '개발',
+    '디자인',
+    '마케팅',
+    '기획',
+    '영업',
+    '인사',
+    '기타'
+  ];
 
   @override
   void initState() {
     super.initState();
     _loadSharedResumes();
+
+    // 검색어 변경 리스너
+    _searchController.addListener(_filterResumes);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // 검색 조건에 따른 이력서 필터링
+  void _filterResumes() {
+    if (_sharedResumes.isEmpty) {
+      setState(() {
+        _filteredResumes = [];
+      });
+      return;
+    }
+
+    final searchQuery = _searchController.text.toLowerCase();
+
+    // 검색어와 카테고리로 필터링
+    var filtered = _sharedResumes.where((resume) {
+      // 검색어 필터링
+      final matchesQuery = searchQuery.isEmpty ||
+          resume.title.toLowerCase().contains(searchQuery) ||
+          resume.ownerName.toLowerCase().contains(searchQuery) ||
+          resume.content.toLowerCase().contains(searchQuery);
+
+      // 카테고리 필터링 (카테고리 정보가 실제 이력서 모델에 추가되어야 함)
+      final matchesCategory = _selectedCategory == '전체' ||
+          resume.title.contains(_selectedCategory); // 임시로 제목에 카테고리가 포함되어 있는지 확인
+
+      return matchesQuery && matchesCategory;
+    }).toList();
+
+    // 정렬 옵션에 따른 정렬
+    switch (_selectedSortOption) {
+      case '최신순':
+        filtered.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+        break;
+      case '오래된순':
+        filtered.sort((a, b) => a.updatedAt.compareTo(b.updatedAt));
+        break;
+      case '제목순':
+        filtered.sort((a, b) => a.title.compareTo(b.title));
+        break;
+      case '작성자순':
+        filtered.sort((a, b) => a.ownerName.compareTo(b.ownerName));
+        break;
+    }
+
+    setState(() {
+      _filteredResumes = filtered;
+    });
   }
 
   Future<void> _loadSharedResumes() async {
@@ -32,11 +109,11 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
       // 임시 데이터
       final now = DateTime.now();
       List<Resume> sharedResumes = List.generate(
-        8,
+        12,
         (index) => Resume(
           id: 'shared-$index',
-          title: '공유된 이력서 ${index + 1}',
-          content: '이력서 ${index + 1}의 내용입니다.',
+          title: '${_getRandomCategory()} 이력서 ${index + 1}',
+          content: '이력서 ${index + 1}의 내용입니다. 다양한 경력과 프로젝트 경험을 포함하고 있습니다.',
           createdAt: now.subtract(Duration(days: index * 3)),
           updatedAt: now.subtract(Duration(days: index)),
           isShared: true,
@@ -47,6 +124,7 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
 
       setState(() {
         _sharedResumes = sharedResumes;
+        _filterResumes(); // 초기 필터링 적용
       });
     } catch (e) {
       // 에러 처리
@@ -60,6 +138,13 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  // 임시 데이터 생성을 위한 랜덤 카테고리 선택
+  String _getRandomCategory() {
+    final categories = ['개발', '디자인', '마케팅', '기획', '영업', '인사', '기타'];
+    return categories[
+        DateTime.now().millisecondsSinceEpoch % categories.length];
   }
 
   @override
@@ -82,16 +167,120 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
 
   // 모바일용 공유 이력서 목록
   Widget _buildMobileSharedList(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _loadSharedResumes,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _sharedResumes.length,
-        itemBuilder: (context, index) {
-          final resume = _sharedResumes[index];
-          return _buildResumeCard(resume);
-        },
-      ),
+    return Column(
+      children: [
+        // 모바일용 검색 필터 영역
+        Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // 검색창
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: '이력서 제목, 작성자 검색',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // 필터 옵션 (드롭다운)
+              Row(
+                children: [
+                  // 카테고리 선택
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: '카테고리',
+                        isDense: true,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      ),
+                      value: _selectedCategory,
+                      items: _categories.map((category) {
+                        return DropdownMenuItem<String>(
+                          value: category,
+                          child: Text(category),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategory = value!;
+                          _filterResumes();
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 정렬 방식 선택
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: '정렬',
+                        isDense: true,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      ),
+                      value: _selectedSortOption,
+                      items: _sortOptions.map((option) {
+                        return DropdownMenuItem<String>(
+                          value: option,
+                          child: Text(option),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedSortOption = value!;
+                          _filterResumes();
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        // 결과 카운트 표시
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${_filteredResumes.length}개의 이력서',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              TextButton.icon(
+                onPressed: _loadSharedResumes,
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text('새로고침'),
+              ),
+            ],
+          ),
+        ),
+
+        // 이력서 목록
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadSharedResumes,
+            child: _filteredResumes.isEmpty
+                ? const Center(child: Text('검색 결과가 없습니다.'))
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _filteredResumes.length,
+                    itemBuilder: (context, index) {
+                      final resume = _filteredResumes[index];
+                      return _buildResumeCard(resume);
+                    },
+                  ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -105,32 +294,20 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 상단 타이틀
-              const Text(
-                '공유된 이력서 목록',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // 필터 및 검색 영역
+              // 상단 타이틀 및 검색/필터 영역
               Row(
                 children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: '이력서 제목 또는 작성자 검색',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 12),
+                  // 타이틀
+                  const Expanded(
+                    child: Text(
+                      '공유된 이력서 목록',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  // 새로고침 버튼
                   ElevatedButton.icon(
                     onPressed: _loadSharedResumes,
                     icon: const Icon(Icons.refresh),
@@ -147,22 +324,143 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+
+              // 검색 및 필터 영역
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '검색 필터',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // 검색창 및 필터
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 검색창
+                          Expanded(
+                            flex: 3,
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                hintText: '이력서 제목, 작성자, 내용 검색',
+                                prefixIcon: const Icon(Icons.search),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                contentPadding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // 카테고리 선택
+                          Expanded(
+                            flex: 2,
+                            child: DropdownButtonFormField<String>(
+                              decoration: InputDecoration(
+                                labelText: '카테고리',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 16),
+                              ),
+                              value: _selectedCategory,
+                              isExpanded: true,
+                              items: _categories.map((category) {
+                                return DropdownMenuItem<String>(
+                                  value: category,
+                                  child: Text(category),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedCategory = value!;
+                                  _filterResumes();
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // 정렬 선택
+                          Expanded(
+                            flex: 2,
+                            child: DropdownButtonFormField<String>(
+                              decoration: InputDecoration(
+                                labelText: '정렬 방식',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 16),
+                              ),
+                              value: _selectedSortOption,
+                              isExpanded: true,
+                              items: _sortOptions.map((option) {
+                                return DropdownMenuItem<String>(
+                                  value: option,
+                                  child: Text(option),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedSortOption = value!;
+                                  _filterResumes();
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // 결과 카운트 표시
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                child: Text(
+                  '${_filteredResumes.length}개의 이력서가 검색되었습니다',
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+
               // 그리드 레이아웃의 공유 이력서 목록
               Expanded(
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 1.5,
-                    crossAxisSpacing: 24,
-                    mainAxisSpacing: 24,
-                  ),
-                  itemCount: _sharedResumes.length,
-                  itemBuilder: (context, index) {
-                    final resume = _sharedResumes[index];
-                    return _buildDesktopResumeCard(resume);
-                  },
-                ),
+                child: _filteredResumes.isEmpty
+                    ? const Center(
+                        child: Text('검색 결과가 없습니다.',
+                            style: TextStyle(fontSize: 18)))
+                    : GridView.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 1.5,
+                          crossAxisSpacing: 24,
+                          mainAxisSpacing: 24,
+                        ),
+                        itemCount: _filteredResumes.length,
+                        itemBuilder: (context, index) {
+                          final resume = _filteredResumes[index];
+                          return _buildDesktopResumeCard(resume);
+                        },
+                      ),
               ),
             ],
           ),
@@ -215,11 +513,19 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
                 ],
               ),
               const Divider(height: 24),
-              Text(
-                resume.title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      resume.title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
+                  ),
+                  // 카테고리 칩 추가
+                  _getCategoryChip(resume.title),
+                ],
               ),
               const SizedBox(height: 8),
               Text(
@@ -301,6 +607,8 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
                       ],
                     ),
                   ),
+                  // 카테고리 칩
+                  _getCategoryChip(resume.title),
                 ],
               ),
               const Divider(height: 32),
@@ -350,6 +658,46 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  // 카테고리 칩 생성
+  Widget _getCategoryChip(String title) {
+    String category = '기타';
+    Color chipColor = Colors.grey;
+
+    // 제목에서 카테고리 추출 (실제로는 이력서 모델에 카테고리 필드가 있어야 함)
+    if (title.contains('개발')) {
+      category = '개발';
+      chipColor = Colors.blue;
+    } else if (title.contains('디자인')) {
+      category = '디자인';
+      chipColor = Colors.purple;
+    } else if (title.contains('마케팅')) {
+      category = '마케팅';
+      chipColor = Colors.orange;
+    } else if (title.contains('기획')) {
+      category = '기획';
+      chipColor = Colors.green;
+    } else if (title.contains('영업')) {
+      category = '영업';
+      chipColor = Colors.red;
+    } else if (title.contains('인사')) {
+      category = '인사';
+      chipColor = Colors.teal;
+    }
+
+    return Chip(
+      label: Text(
+        category,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+        ),
+      ),
+      backgroundColor: chipColor,
+      visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.all(0),
     );
   }
 
