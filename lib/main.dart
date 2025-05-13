@@ -4,6 +4,7 @@ import 'screens/home_screen.dart';
 import 'screens/resume_editor_screen.dart';
 import 'screens/resume_viewer_screen.dart';
 import 'screens/shared_resumes_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,7 +12,12 @@ void main() {
 
 // 라우터 설정
 final _router = GoRouter(
+  initialLocation: '/login', // 초기 경로를 로그인 화면으로 설정
   routes: [
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
+    ),
     GoRoute(
       path: '/',
       builder: (context, state) => const HomeScreen(),
