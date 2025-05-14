@@ -62,19 +62,30 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
       final resume = Resume(
         id: widget.resumeId,
         title: '테스트 이력서',
-        content: '''안녕하세요, 이력서 서비스입니다.
+        content: '''# 자기소개
+안녕하세요, 저는 [이름]입니다.
 
-이 곳에서 이력서 내용을 확인할 수 있습니다.
-다양한 정보를 포함할 수 있으며, 언제든지 내용을 수정하거나 공유할 수 있습니다.
+## 학력
+- [학교명], [전공], [기간]
 
-이력서 내용은 다음과 같은 정보를 포함할 수 있습니다:
-- 개인 정보
-- 학력 사항
-- 경력 사항
-- 자격증
-- 수상 내역
-- 프로젝트 경험
-- 기술 스택
+## 경력
+- [회사명], [직위], [기간]
+  - [주요 업무 및 성과]
+
+## 기술 스택
+- 언어: 
+- 프레임워크: 
+- 도구: 
+
+## 프로젝트 경험
+### [프로젝트명]
+- 기간: [기간]
+- 설명: [프로젝트 설명]
+- 역할: [담당 역할]
+- 성과: [주요 성과]
+
+## 자격증 및 수상 내역
+- [자격증/수상명], [발급/수상 기관], [날짜]
 ''',
         createdAt: DateTime.now().subtract(const Duration(days: 10)),
         updatedAt: DateTime.now().subtract(const Duration(days: 2)),
