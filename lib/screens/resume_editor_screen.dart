@@ -29,12 +29,46 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
   String? _resumeId;
   bool _initialized = false;
   bool _isShared = false;
-  bool _isPreviewMode = false; // 미리보기 모드 상태 변수 추가
+  bool _isPreviewMode = false;
+  bool _isAutoSaving = false;
+  Timer? _autoSaveTimer;
+  final _sectionControllers = {
+    'introduction': TextEditingController(),
+    'education': TextEditingController(),
+    'experience': TextEditingController(),
+    'skills': TextEditingController(),
+    'projects': TextEditingController(),
+    'certifications': TextEditingController(),
+  };
 
   @override
   void initState() {
     super.initState();
     _resumeId = widget.resumeId;
+    _startAutoSave();
+  }
+
+  void _startAutoSave() {
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (_isAutoSaving) return;
+      
+      final currentContent = _contentController.text;
+      if (currentContent.isNotEmpty) {
+        setState(() {
+          _isAutoSaving = true;
+        });
+        
+        // TODO: 실제 API를 통해 자동 저장
+        Future.delayed(const Duration(seconds: 1)).then((_) {
+          if (mounted) {
+            setState(() {
+              _isAutoSaving = false;
+            });
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -215,7 +249,57 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
+    _autoSaveTimer?.cancel();
+    _sectionControllers.values.forEach((controller) => controller.dispose());
     super.dispose();
+  }
+
+  Widget _buildSectionEditor(BuildContext context, String title, String hint, TextEditingController controller) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: controller,
+              decoration: InputDecoration(
+                hintText: hint,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+              onChanged: (value) {
+                _updateContent();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _updateContent() {
+    final content = [
+      '# 자기소개\n${_sectionControllers['introduction']!.text}\n\n',
+      '## 학력\n${_sectionControllers['education']!.text}\n\n',
+      '## 경력\n${_sectionControllers['experience']!.text}\n\n',
+      '## 기술 스택\n${_sectionControllers['skills']!.text}\n\n',
+      '## 프로젝트 경험\n${_sectionControllers['projects']!.text}\n\n',
+      '## 자격증 및 수상 내역\n${_sectionControllers['certifications']!.text}',
+    ].join();
+    
+    _contentController.text = content;
   }
 
   @override
@@ -348,62 +432,6 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
                       _isPreviewMode = !_isPreviewMode;
                     });
                   },
-                ),
-              ],
-            ),
-            SizedBox(height: isDesktop ? 8.0 : 4.0),
-
-            // 마크다운 에디터 또는 미리보기
-            if (_isPreviewMode)
-              // 미리보기 모드
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Theme.of(context).dividerColor),
-                  borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
-                ),
-                height: isDesktop ? 600 : 400,
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: (notification) {
-                    // 자식 스크롤을 부모 스크롤과 분리시킴
-                    return true;
-                  },
-                  child: GestureDetector(
-                    // 여백 영역도 터치 가능하게 함
-                    behavior: HitTestBehavior.translucent,
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16.0),
-                      physics:
-                          const AlwaysScrollableScrollPhysics(), // 항상 스크롤 가능하도록 함
-                      child: Markdown(
-                        data: _contentController.text,
-                        styleSheet: MarkdownStyleSheet(
-                          h1: const TextStyle(
-                              fontSize: 24, fontWeight: FontWeight.bold),
-                          h2: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
-                          h3: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                          p: TextStyle(
-                              fontSize: isDesktop ? 16 : 14, height: 1.5),
-                        ),
-                        shrinkWrap: true, // 내용에 맞게 크기 조정
-                        selectable: true, // 텍스트 선택 가능하도록 설정
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            else
-              // 편집 모드 (커스텀 마크다운 에디터)
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Theme.of(context).dividerColor),
-                  borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
-                ),
-                height: isDesktop ? 600 : 400,
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: (notification) {
-                    // 자식 스크롤을 부모 스크롤과 분리시킴
                     return true;
                   },
                   child: Column(
