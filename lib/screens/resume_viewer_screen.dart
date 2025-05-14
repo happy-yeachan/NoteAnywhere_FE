@@ -366,6 +366,12 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
                   },
                   icon: const Icon(Icons.edit),
                   label: const Text('수정하기'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                    backgroundColor: Colors.white,
+                    side: BorderSide(
+                        color: Theme.of(context).colorScheme.primary),
+                  ),
                 ),
               ],
             ),
@@ -408,6 +414,10 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
                   },
                   icon: const Icon(Icons.edit),
                   label: const Text('수정하기'),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ],
             ),
@@ -530,8 +540,9 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
                                 horizontal: 16,
                                 vertical: 12,
                               ),
+                              foregroundColor: Colors.white,
                               backgroundColor:
-                                  Theme.of(context).colorScheme.secondary,
+                                  Theme.of(context).colorScheme.primary,
                             ),
                           ),
                         ],
