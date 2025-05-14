@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/resume_model.dart';
 import '../models/review_request_model.dart';
 import '../utils/responsive_utils.dart';
@@ -412,9 +413,14 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
 
             const Divider(height: 32),
             // 이력서 내용
-            Text(
-              _resume!.content,
-              style: Theme.of(context).textTheme.bodyLarge,
+            Markdown(
+              data: _resume!.content,
+              styleSheet: MarkdownStyleSheet(
+                h1: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                h2: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                h3: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                p: const TextStyle(fontSize: 16, height: 1.5),
+              ),
             ),
 
             // 좋아요 버튼
@@ -631,11 +637,16 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
                     child: SingleChildScrollView(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text(
-                          _resume!.content,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            height: 1.6,
+                        child: Markdown(
+                          data: _resume!.content,
+                          styleSheet: MarkdownStyleSheet(
+                            h1: const TextStyle(
+                                fontSize: 24, fontWeight: FontWeight.bold),
+                            h2: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                            h3: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                            p: const TextStyle(fontSize: 16, height: 1.5),
                           ),
                         ),
                       ),
