@@ -125,10 +125,6 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
           sharingUrl: 'https://resume-share.example.com/shared-$index',
           category: _getRandomCategory(),
           likeCount: index % 5 + 1, // 임시 좋아요 수
-          isPremium: index % 3 == 0, // 일부 이력서만 프리미엄으로 설정
-          reviewPrice: (index % 3 == 0)
-              ? (index + 1) * 5000.0
-              : 0.0, // 프리미엄 이력서에만 검토 가격 설정
         ),
       );
 
@@ -582,20 +578,6 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
                       Text('${resume.likeCount}'),
                     ],
                   ),
-                  // 프리미엄/검토 가격 표시
-                  if (resume.isPremium)
-                    Chip(
-                      label: Text(
-                        '검토: ${resume.reviewPrice.toStringAsFixed(0)}원',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      backgroundColor: Theme.of(context)
-                          .colorScheme
-                          .secondary
-                          .withOpacity(0.2),
-                      padding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
-                    ),
                   TextButton.icon(
                     icon: const Icon(Icons.visibility, size: 18),
                     label: const Text('보기'),
@@ -687,19 +669,6 @@ class _SharedResumesScreenState extends State<SharedResumesScreen> {
                       ],
                     ),
                   ),
-                  const Spacer(),
-                  // 프리미엄 배지
-                  if (resume.isPremium)
-                    Chip(
-                      label: Text(
-                        '검토: ${resume.reviewPrice.toStringAsFixed(0)}원',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                    ),
                 ],
               ),
               const Divider(height: 24),

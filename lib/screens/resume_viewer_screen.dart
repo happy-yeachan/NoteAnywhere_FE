@@ -288,8 +288,13 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
               icon: const Icon(Icons.edit_outlined),
               onPressed: _isLoading
                   ? null
-                  : () =>
-                      context.push('/editor', extra: {'resumeId': _resume!.id}),
+                  : () {
+                      if (_resume != null) {
+                        context
+                            .push('/editor', extra: {'resumeId': _resume!.id});
+                      }
+                    },
+              tooltip: '이력서 수정하기',
             ),
           ],
         ],
@@ -350,18 +355,17 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
                       _resume!.ownerName,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    if (_resume!.isReviewPriced)
-                      Text(
-                        '검토 비용: ${_resume!.reviewPrice.toStringAsFixed(0)}원',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
                   ],
                 ),
                 const Spacer(),
                 OutlinedButton.icon(
-                  onPressed: _showReviewRequestDialog,
-                  icon: const Icon(Icons.rate_review),
-                  label: const Text('검토 요청'),
+                  onPressed: () {
+                    if (_resume != null) {
+                      context.push('/editor', extra: {'resumeId': _resume!.id});
+                    }
+                  },
+                  icon: const Icon(Icons.edit),
+                  label: const Text('수정하기'),
                 ),
               ],
             ),
@@ -373,7 +377,7 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
 
-            // 좋아요 및 액션 버튼
+            // 좋아요 버튼
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -396,10 +400,14 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
                   ),
                   label: Text('따봉 ${_resume!.likeCount}'),
                 ),
-                OutlinedButton.icon(
-                  onPressed: _showReviewRequestDialog,
-                  icon: const Icon(Icons.rate_review),
-                  label: const Text('검토 요청하기'),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    if (_resume != null) {
+                      context.push('/editor', extra: {'resumeId': _resume!.id});
+                    }
+                  },
+                  icon: const Icon(Icons.edit),
+                  label: const Text('수정하기'),
                 ),
               ],
             ),
@@ -467,17 +475,6 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
                                   style:
                                       Theme.of(context).textTheme.titleMedium,
                                 ),
-                                const SizedBox(width: 16),
-                                if (_resume!.isReviewPriced)
-                                  Chip(
-                                    label: Text(
-                                      '검토 비용: ${_resume!.reviewPrice.toStringAsFixed(0)}원',
-                                    ),
-                                    backgroundColor: Theme.of(context)
-                                        .colorScheme
-                                        .secondary
-                                        .withOpacity(0.1),
-                                  ),
                               ],
                             ),
                             const SizedBox(height: 4),
@@ -520,9 +517,14 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
                           ),
                           const SizedBox(height: 12),
                           ElevatedButton.icon(
-                            onPressed: _showReviewRequestDialog,
-                            icon: const Icon(Icons.rate_review),
-                            label: const Text('검토 요청하기'),
+                            onPressed: () {
+                              if (_resume != null) {
+                                context.push('/editor',
+                                    extra: {'resumeId': _resume!.id});
+                              }
+                            },
+                            icon: const Icon(Icons.edit),
+                            label: const Text('이력서 수정하기'),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,

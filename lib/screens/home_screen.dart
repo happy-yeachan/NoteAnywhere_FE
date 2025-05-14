@@ -20,32 +20,36 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildMobileLayout(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildWelcomeSection(context),
-          const SizedBox(height: 24),
-          _buildMenuGrid(context),
-        ],
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildWelcomeSection(context),
+            const SizedBox(height: 24),
+            _buildMenuGrid(context),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildDesktopLayout(BuildContext context) {
-    return Center(
-      child: SizedBox(
-        width: ResponsiveUtils.getContentMaxWidth(context),
-        child: Padding(
-          padding: ResponsiveUtils.getScreenPadding(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildWelcomeSection(context),
-              const SizedBox(height: 40),
-              _buildMenuGrid(context),
-            ],
+    return SingleChildScrollView(
+      child: Center(
+        child: SizedBox(
+          width: ResponsiveUtils.getContentMaxWidth(context),
+          child: Padding(
+            padding: ResponsiveUtils.getScreenPadding(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildWelcomeSection(context),
+                const SizedBox(height: 40),
+                _buildMenuGrid(context),
+              ],
+            ),
           ),
         ),
       ),
@@ -74,39 +78,19 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              '이력서를 작성하고 공유하며, 다른 사람들의 이력서를 검토해보세요.',
+              '이력서를 작성하고 공유하는 간편한 서비스입니다. 언제 어디서나 내 이력서를 관리하고, 다른 사람들과 공유해보세요.',
               style: TextStyle(
                 fontSize: isDesktop ? 16 : 14,
                 color: Colors.grey[700],
               ),
             ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => context.push('/editor'),
-                  icon: const Icon(Icons.add),
-                  label: const Text('새 이력서 작성'),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? 24 : 16,
-                      vertical: isDesktop ? 16 : 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                OutlinedButton.icon(
-                  onPressed: () => context.push('/viewer/my-resumes'),
-                  icon: const Icon(Icons.description),
-                  label: const Text('내 이력서 목록'),
-                  style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? 24 : 16,
-                      vertical: isDesktop ? 16 : 12,
-                    ),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 8),
+            Text(
+              '간편한 에디터로 이력서를 작성하고, 공유된 이력서를 통해 트렌드를 파악하세요.',
+              style: TextStyle(
+                fontSize: isDesktop ? 16 : 14,
+                color: Colors.grey[700],
+              ),
             ),
           ],
         ),
@@ -149,38 +133,6 @@ class HomeScreen extends StatelessWidget {
           description: '다른 사용자가 공유한 이력서를 확인하세요.',
           onTap: () => context.push('/shared'),
           color: Colors.purpleAccent,
-        ),
-        _buildMenuCard(
-          context,
-          title: '검토 요청 관리',
-          icon: Icons.rate_review,
-          description: '받은 검토 요청과 보낸 검토 요청을 관리하세요.',
-          onTap: () => context.push('/reviews'),
-          color: Colors.orangeAccent,
-        ),
-        _buildMenuCard(
-          context,
-          title: '통계 및 분석',
-          icon: Icons.bar_chart,
-          description: '이력서 조회수와 피드백 통계를 확인하세요.',
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('준비 중인 기능입니다.')),
-            );
-          },
-          color: Colors.teal,
-        ),
-        _buildMenuCard(
-          context,
-          title: '도움말',
-          icon: Icons.help_outline,
-          description: '이력서 작성 도움말과 유용한 팁을 확인하세요.',
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('준비 중인 기능입니다.')),
-            );
-          },
-          color: Colors.amber,
         ),
       ],
     );

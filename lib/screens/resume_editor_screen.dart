@@ -22,15 +22,36 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
   bool _isLoading = false;
   bool _isEditing = false;
   Resume? _resume;
+  String? _resumeId;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    _isEditing = widget.resumeId != null;
+    _resumeId = widget.resumeId;
+  }
 
-    // 실제 앱에서는 여기서 이력서 데이터를 로드
-    if (_isEditing) {
-      _loadResume();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_initialized) {
+      // GoRouter에서 extra 매개변수를 통해 전달된 resumeId가 있는지 확인
+      final extra = GoRouterState.of(context).extra;
+      if (extra != null &&
+          extra is Map<String, dynamic> &&
+          extra.containsKey('resumeId')) {
+        _resumeId = extra['resumeId'] as String?;
+      }
+
+      _isEditing = _resumeId != null;
+
+      // 실제 앱에서는 여기서 이력서 데이터를 로드
+      if (_isEditing) {
+        _loadResume();
+      }
+
+      _initialized = true;
     }
   }
 
@@ -44,8 +65,8 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
       // 임시 데이터
       await Future.delayed(const Duration(milliseconds: 500));
       final resume = Resume.create(
-        title: '테스트 이력서',
-        content: '이력서 내용입니다.',
+        title: '테스트 이력서 ($_resumeId)',
+        content: '이력서 내용입니다. 이 이력서의 ID는 $_resumeId 입니다.',
       );
 
       setState(() {

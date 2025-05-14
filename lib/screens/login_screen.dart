@@ -288,6 +288,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             obscureText: !_isPasswordVisible,
+            onFieldSubmitted: (_) => _login(),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return '비밀번호를 입력해주세요';
