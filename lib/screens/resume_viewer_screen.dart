@@ -324,10 +324,44 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
-            // 마지막 수정 날짜
-            Text(
-              '마지막 수정: ${_formatDate(_resume!.updatedAt)}',
-              style: Theme.of(context).textTheme.bodySmall,
+            // 마지막 수정 날짜와 공개 상태
+            Row(
+              children: [
+                Text(
+                  '마지막 수정: ${_formatDate(_resume!.updatedAt)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(width: 16),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _resume!.isShared
+                        ? Colors.green.withOpacity(0.2)
+                        : Colors.red.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _resume!.isShared ? Icons.public : Icons.lock,
+                        size: 14,
+                        color: _resume!.isShared ? Colors.green : Colors.red,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _resume!.isShared ? '공개' : '비공개',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _resume!.isShared ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
 
             // 작성자 정보 및 액션 버튼
@@ -488,9 +522,49 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
                               ],
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              '마지막 수정: ${_formatDate(_resume!.updatedAt)}',
-                              style: Theme.of(context).textTheme.bodySmall,
+                            Row(
+                              children: [
+                                Text(
+                                  '마지막 수정: ${_formatDate(_resume!.updatedAt)}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                const SizedBox(width: 16),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: _resume!.isShared
+                                        ? Colors.green.withOpacity(0.2)
+                                        : Colors.red.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _resume!.isShared
+                                            ? Icons.public
+                                            : Icons.lock,
+                                        size: 14,
+                                        color: _resume!.isShared
+                                            ? Colors.green
+                                            : Colors.red,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _resume!.isShared ? '공개' : '비공개',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: _resume!.isShared
+                                              ? Colors.green
+                                              : Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

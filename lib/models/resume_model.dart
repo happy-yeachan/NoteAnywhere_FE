@@ -126,6 +126,7 @@ class Resume extends Equatable {
     String content = '',
     String category = '기타',
     double reviewPrice = 0.0,
+    bool isShared = false,
   }) {
     final now = DateTime.now();
     return Resume(
@@ -136,6 +137,7 @@ class Resume extends Equatable {
       updatedAt: now,
       category: category,
       reviewPrice: reviewPrice,
+      isShared: isShared,
     );
   }
 

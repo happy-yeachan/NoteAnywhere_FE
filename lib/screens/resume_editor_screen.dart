@@ -24,6 +24,7 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
   Resume? _resume;
   String? _resumeId;
   bool _initialized = false;
+  bool _isShared = false;
 
   @override
   void initState() {
@@ -73,6 +74,7 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
         _resume = resume;
         _titleController.text = resume.title;
         _contentController.text = resume.content;
+        _isShared = resume.isShared;
       });
     } catch (e) {
       // 에러 처리
@@ -105,6 +107,7 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
           title: title,
           content: content,
           updatedAt: DateTime.now(),
+          isShared: _isShared,
         );
 
         // TODO: API 연동
@@ -123,6 +126,7 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
         final newResume = Resume.create(
           title: title,
           content: content,
+          isShared: _isShared,
         );
 
         // TODO: API 연동
@@ -270,6 +274,56 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
               }
               return null;
             },
+          ),
+          SizedBox(height: isDesktop ? 24.0 : 16.0),
+          // 공개 여부 선택 스위치
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
+              side: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: 1.0,
+              ),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(isDesktop ? 20.0 : 16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '이력서 공개 설정',
+                          style: TextStyle(
+                            fontSize: isDesktop ? 16 : 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '공개로 설정하면 다른 사용자가 내 이력서를 볼 수 있습니다.',
+                          style: TextStyle(
+                            fontSize: isDesktop ? 14 : 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: _isShared,
+                    onChanged: (value) {
+                      setState(() {
+                        _isShared = value;
+                      });
+                    },
+                    activeColor: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ),
+            ),
           ),
           SizedBox(height: isDesktop ? 32.0 : 24.0),
           if (isDesktop)
