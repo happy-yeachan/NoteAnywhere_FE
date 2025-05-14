@@ -302,6 +302,54 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
     _contentController.text = content;
   }
 
+  Widget _buildSectionEditor(BuildContext context, String title, String hint, TextEditingController controller) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: controller,
+              decoration: InputDecoration(
+                hintText: hint,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+              onChanged: (value) {
+                _updateContent();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _updateContent() {
+    final content = [
+      '# 자기소개\n${_sectionControllers['introduction']!.text}\n\n',
+      '## 학력\n${_sectionControllers['education']!.text}\n\n',
+      '## 경력\n${_sectionControllers['experience']!.text}\n\n',
+      '## 기술 스택\n${_sectionControllers['skills']!.text}\n\n',
+      '## 프로젝트 경험\n${_sectionControllers['projects']!.text}\n\n',
+      '## 자격증 및 수상 내역\n${_sectionControllers['certifications']!.text}',
+    ].join();
+    
+    _contentController.text = content;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -412,6 +460,113 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
             ),
             SizedBox(height: isDesktop ? 24.0 : 16.0),
 
+            // 이력서 섹션별 편집
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 왼쪽: 섹션별 편집
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                      borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 자기소개
+                          _buildSectionEditor(
+                            context,
+                            '자기소개',
+                            '간단한 자기소개를 작성해주세요.',
+                            _sectionControllers['introduction']!,
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // 학력
+                          _buildSectionEditor(
+                            context,
+                            '학력',
+                            '학교명, 전공, 기간을 작성해주세요.',
+                            _sectionControllers['education']!,
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // 경력
+                          _buildSectionEditor(
+                            context,
+                            '경력',
+                            '회사명, 직위, 기간, 주요 업무를 작성해주세요.',
+                            _sectionControllers['experience']!,
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // 기술 스택
+                          _buildSectionEditor(
+                            context,
+                            '기술 스택',
+                            '사용 가능한 기술들을 나열해주세요.',
+                            _sectionControllers['skills']!,
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // 프로젝트 경험
+                          _buildSectionEditor(
+                            context,
+                            '프로젝트 경험',
+                            '프로젝트명, 기간, 역할, 성과를 작성해주세요.',
+                            _sectionControllers['projects']!,
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // 자격증 및 수상 내역
+                          _buildSectionEditor(
+                            context,
+                            '자격증 및 수상 내역',
+                            '자격증명, 발급기관, 수상명, 수상일을 작성해주세요.',
+                            _sectionControllers['certifications']!,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                
+                // 오른쪽: 실시간 미리보기
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                      borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Markdown(
+                        data: _contentController.text,
+                        styleSheet: MarkdownStyleSheet(
+                          h1: const TextStyle(
+                              fontSize: 24, fontWeight: FontWeight.bold),
+                          h2: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                          h3: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                          p: TextStyle(
+                              fontSize: isDesktop ? 16 : 14, height: 1.5),
+                        ),
+                        shrinkWrap: true,
+                        selectable: true,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: isDesktop ? 24.0 : 16.0),
+
             // 미리보기 전환 버튼
             Row(
               children: [
@@ -432,15 +587,17 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
                       _isPreviewMode = !_isPreviewMode;
                     });
                   },
-                    return true;
-                  },
-                  child: Column(
-                    children: [
-                      // 마크다운 도구 모음
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.only(
+                  return true;
+                },
+                child: Column(
+                  children: [
+                    // 마크다운 도구 모음
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(isDesktop ? 12.0 : 8.0),
+                          topRight: Radius.circular(isDesktop ? 12.0 : 8.0),
                             topLeft: Radius.circular(isDesktop ? 12.0 : 8.0),
                             topRight: Radius.circular(isDesktop ? 12.0 : 8.0),
                           ),
