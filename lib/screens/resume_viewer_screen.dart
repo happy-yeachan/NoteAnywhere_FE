@@ -413,13 +413,15 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
 
             const Divider(height: 32),
             // 이력서 내용
-            Markdown(
-              data: _resume!.content,
-              styleSheet: MarkdownStyleSheet(
-                h1: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                h2: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                h3: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                p: const TextStyle(fontSize: 16, height: 1.5),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: _createMarkdownWidgets(_resume!.content),
               ),
             ),
 
@@ -632,23 +634,31 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
 
                   const Divider(height: 48),
 
-                  // 이력서 내용
+                  // 이력서 내용 (기본적으로 스크롤 가능)
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Markdown(
-                          data: _resume!.content,
-                          styleSheet: MarkdownStyleSheet(
-                            h1: const TextStyle(
-                                fontSize: 24, fontWeight: FontWeight.bold),
-                            h2: const TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold),
-                            h3: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                            p: const TextStyle(fontSize: 16, height: 1.5),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children:
+                                      _createMarkdownWidgets(_resume!.content),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ),
@@ -862,5 +872,172 @@ class _ResumeViewerScreenState extends State<ResumeViewerScreen> {
   // 날짜 포맷팅 함수
   String _formatDate(DateTime date) {
     return '${date.year}년 ${date.month}월 ${date.day}일';
+  }
+
+  // 마크다운 텍스트를 위젯으로 변환
+  List<Widget> _createMarkdownWidgets(String markdownText) {
+    final lines = markdownText.split('\n');
+    final widgets = <Widget>[];
+
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+
+      // 제목 처리
+      if (line.startsWith('# ')) {
+        widgets.add(Text(
+          line.substring(2),
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ));
+      } else if (line.startsWith('## ')) {
+        widgets.add(Text(
+          line.substring(3),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ));
+      } else if (line.startsWith('### ')) {
+        widgets.add(Text(
+          line.substring(4),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ));
+      }
+      // 목록 처리
+      else if (line.startsWith('- ')) {
+        widgets.add(Padding(
+          padding: const EdgeInsets.only(left: 8.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('• ', style: TextStyle(fontSize: 16, height: 1.5)),
+              Expanded(
+                child: _formatStyledText(
+                  line.substring(2),
+                  const TextStyle(fontSize: 16, height: 1.5),
+                ),
+              ),
+            ],
+          ),
+        ));
+      }
+      // 일반 텍스트
+      else if (line.isNotEmpty) {
+        widgets.add(_formatStyledText(
+          line,
+          const TextStyle(fontSize: 16, height: 1.5),
+        ));
+      }
+      // 빈 줄
+      else {
+        widgets.add(const SizedBox(height: 12));
+      }
+
+      // 줄 간격
+      if (i < lines.length - 1 && line.isNotEmpty) {
+        widgets.add(const SizedBox(height: 8));
+      }
+    }
+
+    return widgets;
+  }
+
+  // 스타일이 있는 텍스트 처리 (굵게, 기울임 등)
+  Widget _formatStyledText(String text, TextStyle baseStyle) {
+    // 굵게 처리 (**텍스트**)
+    if (text.contains('**')) {
+      final parts = <TextSpan>[];
+      var current = text;
+
+      while (current.contains('**')) {
+        final startIndex = current.indexOf('**');
+        if (startIndex > 0) {
+          parts.add(TextSpan(
+            text: current.substring(0, startIndex),
+            style: baseStyle,
+          ));
+        }
+
+        current = current.substring(startIndex + 2);
+
+        if (current.contains('**')) {
+          final endIndex = current.indexOf('**');
+          parts.add(TextSpan(
+            text: current.substring(0, endIndex),
+            style: baseStyle.copyWith(fontWeight: FontWeight.bold),
+          ));
+
+          current = current.substring(endIndex + 2);
+        } else {
+          // 닫는 **가 없는 경우 남은 텍스트를 추가
+          parts.add(TextSpan(
+            text: '**$current',
+            style: baseStyle,
+          ));
+          current = '';
+        }
+      }
+
+      // 남은 텍스트가 있으면 추가
+      if (current.isNotEmpty) {
+        parts.add(TextSpan(
+          text: current,
+          style: baseStyle,
+        ));
+      }
+
+      return RichText(
+        text: TextSpan(children: parts),
+      );
+    }
+
+    // 기울임 처리 (*텍스트*)
+    if (text.contains('*')) {
+      final parts = <TextSpan>[];
+      var current = text;
+
+      while (current.contains('*')) {
+        final startIndex = current.indexOf('*');
+        if (startIndex > 0) {
+          parts.add(TextSpan(
+            text: current.substring(0, startIndex),
+            style: baseStyle,
+          ));
+        }
+
+        current = current.substring(startIndex + 1);
+
+        if (current.contains('*')) {
+          final endIndex = current.indexOf('*');
+          parts.add(TextSpan(
+            text: current.substring(0, endIndex),
+            style: baseStyle.copyWith(fontStyle: FontStyle.italic),
+          ));
+
+          current = current.substring(endIndex + 1);
+        } else {
+          // 닫는 *가 없는 경우 남은 텍스트를 추가
+          parts.add(TextSpan(
+            text: '*$current',
+            style: baseStyle,
+          ));
+          current = '';
+        }
+      }
+
+      // 남은 텍스트가 있으면 추가
+      if (current.isNotEmpty) {
+        parts.add(TextSpan(
+          text: current,
+          style: baseStyle,
+        ));
+      }
+
+      return RichText(
+        text: TextSpan(children: parts),
+      );
+    }
+
+    // 일반 텍스트
+    return Text(
+      text,
+      style: baseStyle,
+    );
   }
 }

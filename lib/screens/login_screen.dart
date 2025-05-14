@@ -255,6 +255,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return '이메일을 입력해주세요';
@@ -288,6 +290,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             obscureText: !_isPasswordVisible,
+            textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _login(),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:markdown_editable_textinput/markdown_text_input.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'dart:math' as math;
+import 'package:flutter/gestures.dart'; // PointerScrollEvent를 위한 import 추가
 import '../models/resume_model.dart';
 import '../utils/responsive_utils.dart';
 
@@ -239,20 +241,24 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ResponsiveLayout(
-              mobile: _buildMobileLayout(context),
-              desktop: _buildDesktopLayout(context),
-            ),
+      body: GestureDetector(
+        // 빈 공간 터치 시 키보드 닫기
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ResponsiveLayout(
+                mobile: _buildMobileLayout(context),
+                desktop: _buildDesktopLayout(context),
+              ),
+      ),
     );
   }
 
   // 모바일 레이아웃
   Widget _buildMobileLayout(BuildContext context) {
-    return SingleChildScrollView(
+    return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: _buildForm(context),
       ),
     );
@@ -266,6 +272,7 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
         child: Padding(
           padding: ResponsiveUtils.getScreenPadding(context),
           child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Card(
               elevation: 4,
               shape: RoundedRectangleBorder(
@@ -284,264 +291,349 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
 
   // 폼 빌더
   Widget _buildForm(BuildContext context, {bool isDesktop = false}) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (isDesktop) ...[
-            Text(
-              _isEditing ? '이력서 수정하기' : '새 이력서 작성하기',
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-          ],
-          // 제목 입력 필드
-          TextFormField(
-            controller: _titleController,
-            decoration: InputDecoration(
-              labelText: '제목',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (isDesktop) ...[
+              Text(
+                _isEditing ? '이력서 수정하기' : '새 이력서 작성하기',
+                style: Theme.of(context).textTheme.headlineMedium,
+                textAlign: TextAlign.center,
               ),
-              contentPadding: EdgeInsets.all(isDesktop ? 20.0 : 16.0),
-            ),
-            style: isDesktop
-                ? const TextStyle(fontSize: 18)
-                : const TextStyle(fontSize: 16),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return '제목을 입력해주세요';
-              }
-              return null;
-            },
-          ),
-          SizedBox(height: isDesktop ? 24.0 : 16.0),
-
-          // 마크다운 에디터 또는 미리보기
-          if (_isPreviewMode)
-            // 미리보기 모드
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Theme.of(context).dividerColor),
-                borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
-              ),
-              height: isDesktop ? 600 : 400,
-              padding: const EdgeInsets.all(16.0),
-              child: Markdown(
-                data: _contentController.text,
-                styleSheet: MarkdownStyleSheet(
-                  h1: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.bold),
-                  h2: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold),
-                  h3: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                  p: TextStyle(fontSize: isDesktop ? 16 : 14, height: 1.5),
+              const SizedBox(height: 32),
+            ],
+            // 제목 입력 필드
+            TextFormField(
+              controller: _titleController,
+              decoration: InputDecoration(
+                labelText: '제목',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
                 ),
+                contentPadding: EdgeInsets.all(isDesktop ? 20.0 : 16.0),
               ),
-            )
-          else
-            // 편집 모드
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
-                side: BorderSide(color: Theme.of(context).dividerColor),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 마크다운 도구 모음
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildMarkdownButton(
-                              icon: Icons.title,
-                              tooltip: '제목 1',
-                              onPressed: () => _insertMarkdown('# ', ' '),
-                            ),
-                            _buildMarkdownButton(
-                              icon: Icons.title,
-                              tooltip: '제목 2',
-                              onPressed: () => _insertMarkdown('## ', ' '),
-                              scale: 0.9,
-                            ),
-                            _buildMarkdownButton(
-                              icon: Icons.title,
-                              tooltip: '제목 3',
-                              onPressed: () => _insertMarkdown('### ', ' '),
-                              scale: 0.8,
-                            ),
-                            const SizedBox(width: 8),
-                            _buildMarkdownButton(
-                              icon: Icons.format_bold,
-                              tooltip: '굵게',
-                              onPressed: () => _insertMarkdown('**', '**'),
-                            ),
-                            _buildMarkdownButton(
-                              icon: Icons.format_italic,
-                              tooltip: '기울임',
-                              onPressed: () => _insertMarkdown('*', '*'),
-                            ),
-                            _buildMarkdownButton(
-                              icon: Icons.format_strikethrough,
-                              tooltip: '취소선',
-                              onPressed: () => _insertMarkdown('~~', '~~'),
-                            ),
-                            const SizedBox(width: 8),
-                            _buildMarkdownButton(
-                              icon: Icons.format_list_bulleted,
-                              tooltip: '글머리 기호',
-                              onPressed: () => _insertMarkdown('- ', '\n'),
-                            ),
-                            _buildMarkdownButton(
-                              icon: Icons.format_list_numbered,
-                              tooltip: '번호 목록',
-                              onPressed: () => _insertMarkdown('1. ', '\n'),
-                            ),
-                            const SizedBox(width: 8),
-                            _buildMarkdownButton(
-                              icon: Icons.table_chart,
-                              tooltip: '표',
-                              onPressed: () => _insertMarkdown('''
+              style: isDesktop
+                  ? const TextStyle(fontSize: 18)
+                  : const TextStyle(fontSize: 16),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return '제목을 입력해주세요';
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: isDesktop ? 24.0 : 16.0),
+
+            // 미리보기 전환 버튼
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '내용',
+                    style: TextStyle(
+                      fontSize: isDesktop ? 16 : 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                TextButton.icon(
+                  icon: Icon(_isPreviewMode ? Icons.edit : Icons.visibility),
+                  label: Text(_isPreviewMode ? '편집 모드' : '미리보기 모드'),
+                  onPressed: () {
+                    setState(() {
+                      _isPreviewMode = !_isPreviewMode;
+                    });
+                  },
+                ),
+              ],
+            ),
+            SizedBox(height: isDesktop ? 8.0 : 4.0),
+
+            // 마크다운 에디터 또는 미리보기
+            if (_isPreviewMode)
+              // 미리보기 모드
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Theme.of(context).dividerColor),
+                  borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
+                ),
+                height: isDesktop ? 600 : 400,
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    // 자식 스크롤을 부모 스크롤과 분리시킴
+                    return true;
+                  },
+                  child: GestureDetector(
+                    // 여백 영역도 터치 가능하게 함
+                    behavior: HitTestBehavior.translucent,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+                      physics:
+                          const AlwaysScrollableScrollPhysics(), // 항상 스크롤 가능하도록 함
+                      child: Markdown(
+                        data: _contentController.text,
+                        styleSheet: MarkdownStyleSheet(
+                          h1: const TextStyle(
+                              fontSize: 24, fontWeight: FontWeight.bold),
+                          h2: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                          h3: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                          p: TextStyle(
+                              fontSize: isDesktop ? 16 : 14, height: 1.5),
+                        ),
+                        shrinkWrap: true, // 내용에 맞게 크기 조정
+                        selectable: true, // 텍스트 선택 가능하도록 설정
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            else
+              // 편집 모드 (커스텀 마크다운 에디터)
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Theme.of(context).dividerColor),
+                  borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
+                ),
+                height: isDesktop ? 600 : 400,
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    // 자식 스크롤을 부모 스크롤과 분리시킴
+                    return true;
+                  },
+                  child: Column(
+                    children: [
+                      // 마크다운 도구 모음
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(isDesktop ? 12.0 : 8.0),
+                            topRight: Radius.circular(isDesktop ? 12.0 : 8.0),
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 4),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics:
+                              const ClampingScrollPhysics(), // 수평 스크롤 물리 효과 추가
+                          child: Wrap(
+                            spacing: 2,
+                            children: [
+                              _buildMarkdownButton(
+                                icon: Icons.title,
+                                tooltip: '제목 1',
+                                onPressed: () => _insertMarkdown('# ', ' '),
+                              ),
+                              _buildMarkdownButton(
+                                icon: Icons.title,
+                                tooltip: '제목 2',
+                                onPressed: () => _insertMarkdown('## ', ' '),
+                                scale: 0.9,
+                              ),
+                              _buildMarkdownButton(
+                                icon: Icons.title,
+                                tooltip: '제목 3',
+                                onPressed: () => _insertMarkdown('### ', ' '),
+                                scale: 0.8,
+                              ),
+                              const SizedBox(width: 4),
+                              _buildMarkdownButton(
+                                icon: Icons.format_bold,
+                                tooltip: '굵게',
+                                onPressed: () => _insertMarkdown('**', '**'),
+                              ),
+                              _buildMarkdownButton(
+                                icon: Icons.format_italic,
+                                tooltip: '기울임',
+                                onPressed: () => _insertMarkdown('*', '*'),
+                              ),
+                              _buildMarkdownButton(
+                                icon: Icons.format_strikethrough,
+                                tooltip: '취소선',
+                                onPressed: () => _insertMarkdown('~~', '~~'),
+                              ),
+                              const SizedBox(width: 4),
+                              _buildMarkdownButton(
+                                icon: Icons.format_list_bulleted,
+                                tooltip: '글머리 기호',
+                                onPressed: () => _insertMarkdown('- ', '\n'),
+                              ),
+                              _buildMarkdownButton(
+                                icon: Icons.format_list_numbered,
+                                tooltip: '번호 목록',
+                                onPressed: () => _insertMarkdown('1. ', '\n'),
+                              ),
+                              const SizedBox(width: 4),
+                              _buildMarkdownButton(
+                                icon: Icons.table_chart,
+                                tooltip: '표',
+                                onPressed: () => _insertMarkdown('''
 | 제목1 | 제목2 | 제목3 |
 |------|------|------|
 | 내용1 | 내용2 | 내용3 |
 ''', '\n'),
-                            ),
-                            _buildMarkdownButton(
-                              icon: Icons.code,
-                              tooltip: '코드',
-                              onPressed: () => _insertMarkdown('`', '`'),
-                            ),
-                            _buildMarkdownButton(
-                              icon: Icons.link,
-                              tooltip: '링크',
-                              onPressed: () =>
-                                  _insertMarkdown('[링크 텍스트](', ')'),
-                            ),
-                          ],
+                              ),
+                              _buildMarkdownButton(
+                                icon: Icons.code,
+                                tooltip: '코드',
+                                onPressed: () =>
+                                    _insertMarkdown('```\n', '\n```'),
+                              ),
+                              _buildMarkdownButton(
+                                icon: Icons.link,
+                                tooltip: '링크',
+                                onPressed: () =>
+                                    _insertMarkdown('[링크 텍스트](', ')'),
+                              ),
+                            ],
+                          ),
                         ),
+                      ),
+
+                      // 에디터 영역
+                      Expanded(
+                        child: GestureDetector(
+                          // 여백 영역도 터치 가능하게 함
+                          behavior: HitTestBehavior.translucent,
+                          // 더블 탭으로 에디터에 포커스 주기
+                          onDoubleTap: () =>
+                              FocusScope.of(context).requestFocus(
+                            FocusNode(),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: TextFormField(
+                              controller: _contentController,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                hintText: '마크다운으로 이력서 내용을 작성해보세요...',
+                                isCollapsed: true, // 내부 패딩 제거
+                              ),
+                              style: TextStyle(
+                                fontSize: isDesktop ? 16 : 14,
+                                height: 1.5,
+                                fontFamily: 'Roboto Mono', // 모노스페이스 폰트 사용
+                              ),
+                              maxLines: null,
+                              expands: true, // 사용 가능한 공간을 모두 채우도록 함
+                              textAlignVertical:
+                                  TextAlignVertical.top, // 텍스트를 상단에서부터 시작
+                              keyboardType:
+                                  TextInputType.multiline, // 멀티라인 입력 활성화
+                              textInputAction:
+                                  TextInputAction.newline, // 엔터키로 줄바꿈
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return '내용을 입력해주세요';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            SizedBox(height: isDesktop ? 24.0 : 16.0),
+
+            // 공개 여부 선택 스위치
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
+                side: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 1.0,
+                ),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(isDesktop ? 20.0 : 16.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '이력서 공개 설정',
+                            style: TextStyle(
+                              fontSize: isDesktop ? 16 : 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '공개로 설정하면 다른 사용자가 내 이력서를 볼 수 있습니다.',
+                            style: TextStyle(
+                              fontSize: isDesktop ? 14 : 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    // 마크다운 에디터
-                    SizedBox(
-                      height: isDesktop ? 550 : 350,
-                      child: MarkdownTextInput(
-                        (String value) {
-                          _contentController.text = value;
-                        },
-                        _contentController.text,
-                        label: '내용',
-                        maxLines: null,
-                        actions: const [],
-                        textStyle: TextStyle(
-                          fontSize: isDesktop ? 16 : 14,
-                          height: 1.5,
-                        ),
-                      ),
+                    Switch(
+                      value: _isShared,
+                      onChanged: (value) {
+                        setState(() {
+                          _isShared = value;
+                        });
+                      },
+                      activeColor: Theme.of(context).colorScheme.primary,
                     ),
                   ],
                 ),
               ),
             ),
-
-          SizedBox(height: isDesktop ? 24.0 : 16.0),
-
-          // 공개 여부 선택 스위치
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(isDesktop ? 12.0 : 8.0),
-              side: BorderSide(
-                color: Theme.of(context).dividerColor,
-                width: 1.0,
-              ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(isDesktop ? 20.0 : 16.0),
-              child: Row(
+            SizedBox(height: isDesktop ? 32.0 : 24.0),
+            if (isDesktop)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '이력서 공개 설정',
-                          style: TextStyle(
-                            fontSize: isDesktop ? 16 : 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '공개로 설정하면 다른 사용자가 내 이력서를 볼 수 있습니다.',
-                          style: TextStyle(
-                            fontSize: isDesktop ? 14 : 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
+                  ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _saveResume,
+                    icon: const Icon(Icons.save),
+                    label: const Text('저장하기'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                      textStyle: const TextStyle(fontSize: 16),
                     ),
                   ),
-                  Switch(
-                    value: _isShared,
-                    onChanged: (value) {
-                      setState(() {
-                        _isShared = value;
-                      });
-                    },
-                    activeColor: Theme.of(context).colorScheme.primary,
+                  const SizedBox(width: 16),
+                  OutlinedButton.icon(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.cancel),
+                    label: const Text('취소'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
                   ),
                 ],
+              )
+            else
+              ElevatedButton(
+                onPressed: _isLoading ? null : _saveResume,
+                child: const Text('저장하기'),
               ),
-            ),
-          ),
-          SizedBox(height: isDesktop ? 32.0 : 24.0),
-          if (isDesktop)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _saveResume,
-                  icon: const Icon(Icons.save),
-                  label: const Text('저장하기'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                    textStyle: const TextStyle(fontSize: 16),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                OutlinedButton.icon(
-                  onPressed: () => context.pop(),
-                  icon: const Icon(Icons.cancel),
-                  label: const Text('취소'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                    textStyle: const TextStyle(fontSize: 16),
-                  ),
-                ),
-              ],
-            )
-          else
-            ElevatedButton(
-              onPressed: _isLoading ? null : _saveResume,
-              child: const Text('저장하기'),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -574,53 +666,53 @@ class _ResumeEditorScreenState extends State<ResumeEditorScreen> {
   void _insertMarkdown(String prefix, String suffix) {
     // 현재 커서 위치 또는 선택된 텍스트 범위
     final currentText = _contentController.text;
-    final selection = TextSelection(
-      baseOffset: _contentController.selection.baseOffset,
-      extentOffset: _contentController.selection.extentOffset,
-    );
+    final selection = _contentController.selection;
 
-    String newText;
-    TextSelection newSelection;
-
+    // 텍스트 필드에 포커스가 없는 경우 (선택 범위가 유효하지 않음)
     if (selection.baseOffset < 0) {
-      // 선택된 텍스트가 없는 경우
+      // 텍스트의 끝에 마크다운 삽입
       _contentController.text = '$currentText$prefix$suffix';
-      newSelection = TextSelection.collapsed(
+
+      // 마크다운 사이에 커서 위치시키기
+      _contentController.selection = TextSelection.collapsed(
         offset: _contentController.text.length - suffix.length,
       );
-    } else if (selection.baseOffset == selection.extentOffset) {
-      // 커서만 있는 경우
-      final beforeCursor = currentText.substring(0, selection.baseOffset);
-      final afterCursor = currentText.substring(selection.baseOffset);
-
-      newText = '$beforeCursor$prefix$suffix$afterCursor';
-      newSelection = TextSelection.collapsed(
-        offset: selection.baseOffset + prefix.length,
-      );
-
-      _contentController.text = newText;
-    } else {
-      // 텍스트가 선택된 경우
-      final selectedText = currentText.substring(
-        selection.baseOffset,
-        selection.extentOffset,
-      );
-
-      final beforeSelection = currentText.substring(0, selection.baseOffset);
-      final afterSelection = currentText.substring(selection.extentOffset);
-
-      newText = '$beforeSelection$prefix$selectedText$suffix$afterSelection';
-      newSelection = TextSelection(
-        baseOffset: selection.baseOffset + prefix.length,
-        extentOffset: selection.extentOffset + prefix.length,
-      );
-
-      _contentController.text = newText;
+      return;
     }
 
-    // 아직 위젯에 반영되지 않은 상태에서 선택 위치를 업데이트하기 위해 딜레이 추가
-    Future.delayed(const Duration(milliseconds: 10), () {
-      _contentController.selection = newSelection;
-    });
+    // 안전한 범위 계산
+    final baseOffset =
+        math.min(math.max(0, selection.baseOffset), currentText.length);
+    final extentOffset =
+        math.min(math.max(0, selection.extentOffset), currentText.length);
+
+    // 삽입 전 텍스트
+    final beforeSelection = currentText.substring(0, baseOffset);
+
+    // 선택된 텍스트 또는 빈 문자열
+    final selectedText = baseOffset == extentOffset
+        ? ''
+        : currentText.substring(baseOffset, extentOffset);
+
+    // 삽입 후 텍스트
+    final afterSelection = currentText.substring(extentOffset);
+
+    // 새로운 텍스트 구성
+    final newText =
+        '$beforeSelection$prefix$selectedText$suffix$afterSelection';
+
+    // 새로운 선택 범위 계산
+    final newSelectionOffset = baseOffset + prefix.length;
+
+    // 새로운 텍스트로 TextEditingController 업데이트
+    _contentController.value = TextEditingValue(
+      text: newText,
+      selection: selectedText.isEmpty
+          ? TextSelection.collapsed(offset: newSelectionOffset)
+          : TextSelection(
+              baseOffset: newSelectionOffset,
+              extentOffset: newSelectionOffset + selectedText.length,
+            ),
+    );
   }
 }
